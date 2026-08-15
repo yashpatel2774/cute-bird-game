@@ -26,6 +26,10 @@ const PIPE_INTERVAL = 2000;
 
 const MIN_PIPE_HEIGHT = 60;
 
+// Collision margin
+// Higher value = bird must go slightly more inside the pipe
+const COLLISION_MARGIN = 3;
+
 
 // ========================================
 // INTERVAL STORAGE
@@ -58,8 +62,11 @@ gravityInterval = setInterval(() => {
     // BIRD BOUNDARY CHECK
     // ====================================
 
-    const birdRect = bird.getBoundingClientRect();
-    const gameRect = game.getBoundingClientRect();
+    const birdRect =
+        bird.getBoundingClientRect();
+
+    const gameRect =
+        game.getBoundingClientRect();
 
 
     // Bird touches top
@@ -102,7 +109,8 @@ function jump() {
 
     }
 
-    bird.style.top = birdTop + "px";
+    bird.style.top =
+        birdTop + "px";
 }
 
 
@@ -309,21 +317,49 @@ function createPipe() {
 
 
             // ====================================
+            // CREATE SMALLER BIRD HITBOX
+            // ====================================
+            //
+            // This ignores a few pixels around
+            // the outside of the bird image.
+            //
+            // This is useful because your PNG
+            // may contain transparent space.
+            // ====================================
+
+            const birdLeft =
+                birdRect.left +
+                COLLISION_MARGIN;
+
+            const birdRight =
+                birdRect.right -
+                COLLISION_MARGIN;
+
+            const birdTopPosition =
+                birdRect.top +
+                COLLISION_MARGIN;
+
+            const birdBottom =
+                birdRect.bottom -
+                COLLISION_MARGIN;
+
+
+            // ====================================
             // TOP PIPE COLLISION
             // ====================================
 
             const hitTopPipe =
 
-                birdRect.right >
+                birdRight >
                 topPipeRect.left &&
 
-                birdRect.left <
+                birdLeft <
                 topPipeRect.right &&
 
-                birdRect.bottom >
+                birdBottom >
                 topPipeRect.top &&
 
-                birdRect.top <
+                birdTopPosition <
                 topPipeRect.bottom;
 
 
@@ -333,16 +369,16 @@ function createPipe() {
 
             const hitBottomPipe =
 
-                birdRect.right >
+                birdRight >
                 bottomPipeRect.left &&
 
-                birdRect.left <
+                birdLeft <
                 bottomPipeRect.right &&
 
-                birdRect.bottom >
+                birdBottom >
                 bottomPipeRect.top &&
 
-                birdRect.top <
+                birdTopPosition <
                 bottomPipeRect.bottom;
 
 
