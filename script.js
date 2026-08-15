@@ -1,236 +1,479 @@
-// ===============================
-// BIRD FLAPPY GAME
-// ===============================
+// ========================================
+// FLAPPY BIRD GAME
+// ========================================
 
-// Get game elements
 const bird = document.querySelector(".bird-png");
 const game = document.querySelector(".game");
 
-// ===============================
+// ========================================
 // GAME VARIABLES
-// ===============================
+// ========================================
 
 let birdTop = 200;
 let gravity = 2;
+
 let isGameOver = false;
 
-// ===============================
+// ========================================
+// GAME SETTINGS
+// ========================================
+
+const JUMP_POWER = 60;
+
+const PIPE_GAP = 200;
+const PIPE_SPEED = 2;
+const PIPE_INTERVAL = 2000;
+
+const MIN_PIPE_HEIGHT = 60;
+
+
+// ========================================
+// INTERVAL STORAGE
+// ========================================
+
+let gravityInterval = null;
+let pipeCreationInterval = null;
+
+let pipeMovementIntervals = [];
+
+
+// ========================================
 // BIRD GRAVITY
-// ===============================
+// ========================================
 
-setInterval(() => {
-  if (isGameOver) return;
+gravityInterval = setInterval(() => {
 
-  birdTop = birdTop + gravity;
+    // Stop everything after game over
+    if (isGameOver) {
+        return;
+    }
 
-  bird.style.top = birdTop + "px";
+    // Bird falls
+    birdTop += gravity;
 
-  // Check if bird goes outside game area
-  if (birdTop > game.clientHeight || birdTop < 0) {
-    gameOver();
-  }
+    bird.style.top = birdTop + "px";
+
+
+    // ====================================
+    // BIRD BOUNDARY CHECK
+    // ====================================
+
+    const birdRect = bird.getBoundingClientRect();
+    const gameRect = game.getBoundingClientRect();
+
+
+    // Bird touches top
+    const hitTop =
+        birdRect.top <= gameRect.top;
+
+
+    // Bird touches bottom
+    const hitBottom =
+        birdRect.bottom >= gameRect.bottom;
+
+
+    // Game Over
+    if (hitTop || hitBottom) {
+
+        gameOver();
+
+    }
+
 }, 20);
 
 
-// ===============================
-// BIRD JUMP FUNCTION
-// ===============================
+// ========================================
+// BIRD JUMP
+// ========================================
 
 function jump() {
-  if (isGameOver) return;
 
-  birdTop = birdTop - 60;
+    if (isGameOver) {
+        return;
+    }
+
+    birdTop -= JUMP_POWER;
+
+
+    // Don't allow bird to go too far above
+    if (birdTop < 0) {
+
+        birdTop = 0;
+
+    }
+
+    bird.style.top = birdTop + "px";
 }
 
 
-// ===============================
+// ========================================
 // KEYBOARD CONTROL
-// ===============================
+// ========================================
 
-// Space + Arrow Up
-document.addEventListener("keydown", (e) => {
+document.addEventListener("keydown", (event) => {
 
-  if (e.code === "Space" || e.code === "ArrowUp") {
+    if (
+        event.code === "Space" ||
+        event.code === "ArrowUp"
+    ) {
 
-    e.preventDefault();
+        event.preventDefault();
 
-    jump();
-  }
+        jump();
+
+    }
 
 });
 
 
-// ===============================
+// ========================================
 // MOBILE TOUCH CONTROL
-// ===============================
+// ========================================
 
-// Touch screen
 game.addEventListener(
-  "touchstart",
-  (e) => {
+    "touchstart",
+    (event) => {
 
-    e.preventDefault();
+        event.preventDefault();
 
-    jump();
+        jump();
 
-  },
-  { passive: false }
+    },
+    {
+        passive: false
+    }
 );
 
 
-// ===============================
+// ========================================
 // MOUSE CONTROL
-// ===============================
+// ========================================
 
-// Desktop mouse click
-game.addEventListener("click", (e) => {
+game.addEventListener("click", (event) => {
 
-  e.preventDefault();
+    if (isGameOver) {
+        return;
+    }
 
-  jump();
+    jump();
 
 });
 
 
-// ===============================
-// CREATE PIPES
-// ===============================
+// ========================================
+// CREATE PIPE
+// ========================================
 
 function createPipe() {
 
-  if (isGameOver) return;
-
-  // Create top pipe
-  const pipeTop = document.createElement("div");
-
-  // Create bottom pipe
-  const pipeBottom = document.createElement("div");
-
-  pipeTop.className = "pipe";
-  pipeBottom.className = "pipe";
-
-  // Gap between pipes
-  let gap = 100;
-
-  // Get current game height
-  let gameHeight = game.clientHeight;
-
-  // Maximum pipe height
-  let maxHeight = gameHeight - gap - 70;
-
-  // Random top pipe height
-  let topPipeHeight = Math.random() * maxHeight + 50;
-
-  // Bottom pipe height
-  let bottomPipeHeight =
-    maxHeight - topPipeHeight - gap;
-
-  // Prevent negative height
-  if (bottomPipeHeight < 50) {
-    bottomPipeHeight = 50;
-  }
-
-  // Set pipe heights
-  pipeTop.style.height = topPipeHeight + "px";
-  pipeBottom.style.height = bottomPipeHeight + "px";
-
-  // Position pipes
-  pipeTop.style.top = "0px";
-  pipeBottom.style.bottom = "0px";
-
-  // Add pipes to game
-  game.append(pipeTop, pipeBottom);
-
-  // Start pipes from right side
-  let pipeLeft = game.clientWidth;
-
-  pipeTop.style.left = pipeLeft + "px";
-  pipeBottom.style.left = pipeLeft + "px";
-
-
-  // ===============================
-  // MOVE PIPES
-  // ===============================
-
-  let move = setInterval(() => {
-
     if (isGameOver) {
-
-      clearInterval(move);
-
-      return;
-    }
-
-    // Move pipes left
-    pipeLeft -= 2;
-
-    pipeTop.style.left = pipeLeft + "px";
-    pipeBottom.style.left = pipeLeft + "px";
-
-
-    // ===============================
-    // COLLISION DETECTION
-    // ===============================
-
-    let birdRect = bird.getBoundingClientRect();
-
-    let topRect = pipeTop.getBoundingClientRect();
-
-    let bottomRect = pipeBottom.getBoundingClientRect();
-
-
-    if (
-      birdRect.right > topRect.left &&
-      birdRect.left < topRect.right &&
-      (
-        birdRect.top < topRect.bottom ||
-        birdRect.bottom > bottomRect.top
-      )
-    ) {
-
-      gameOver();
-
-      clearInterval(move);
-
-      return;
+        return;
     }
 
 
-    // ===============================
-    // REMOVE OLD PIPES
-    // ===============================
+    // Create pipes
+    const pipeTop =
+        document.createElement("div");
 
-    if (pipeLeft < -40) {
+    const pipeBottom =
+        document.createElement("div");
 
-      pipeTop.remove();
 
-      pipeBottom.remove();
+    pipeTop.classList.add("pipe");
 
-      clearInterval(move);
-    }
+    pipeBottom.classList.add("pipe");
 
-  }, 20);
+
+    // ====================================
+    // GAME HEIGHT
+    // ====================================
+
+    const gameHeight =
+        game.clientHeight;
+
+
+    // ====================================
+    // PIPE HEIGHT CALCULATION
+    // ====================================
+
+    const availableHeight =
+        gameHeight - PIPE_GAP;
+
+
+    const maxTopPipeHeight =
+        availableHeight - MIN_PIPE_HEIGHT;
+
+
+    const topPipeHeight =
+        Math.floor(
+            Math.random() *
+            (
+                maxTopPipeHeight -
+                MIN_PIPE_HEIGHT
+            )
+        ) +
+        MIN_PIPE_HEIGHT;
+
+
+    const bottomPipeHeight =
+        gameHeight -
+        topPipeHeight -
+        PIPE_GAP;
+
+
+    // ====================================
+    // SET PIPE HEIGHT
+    // ====================================
+
+    pipeTop.style.height =
+        topPipeHeight + "px";
+
+    pipeBottom.style.height =
+        bottomPipeHeight + "px";
+
+
+    // ====================================
+    // SET PIPE POSITION
+    // ====================================
+
+    pipeTop.style.top = "0px";
+
+    pipeBottom.style.bottom = "0px";
+
+
+    // ====================================
+    // ADD PIPES
+    // ====================================
+
+    game.appendChild(pipeTop);
+
+    game.appendChild(pipeBottom);
+
+
+    // ====================================
+    // PIPE START POSITION
+    // ====================================
+
+    let pipeLeft =
+        game.clientWidth;
+
+
+    pipeTop.style.left =
+        pipeLeft + "px";
+
+    pipeBottom.style.left =
+        pipeLeft + "px";
+
+
+    // ====================================
+    // MOVE PIPE
+    // ====================================
+
+    const pipeMovement =
+        setInterval(() => {
+
+            if (isGameOver) {
+
+                clearInterval(pipeMovement);
+
+                return;
+
+            }
+
+
+            // Move pipe left
+            pipeLeft -= PIPE_SPEED;
+
+
+            pipeTop.style.left =
+                pipeLeft + "px";
+
+            pipeBottom.style.left =
+                pipeLeft + "px";
+
+
+            // ====================================
+            // COLLISION DETECTION
+            // ====================================
+
+            const birdRect =
+                bird.getBoundingClientRect();
+
+
+            const topPipeRect =
+                pipeTop.getBoundingClientRect();
+
+
+            const bottomPipeRect =
+                pipeBottom.getBoundingClientRect();
+
+
+            // ====================================
+            // TOP PIPE COLLISION
+            // ====================================
+
+            const hitTopPipe =
+
+                birdRect.right >
+                topPipeRect.left &&
+
+                birdRect.left <
+                topPipeRect.right &&
+
+                birdRect.bottom >
+                topPipeRect.top &&
+
+                birdRect.top <
+                topPipeRect.bottom;
+
+
+            // ====================================
+            // BOTTOM PIPE COLLISION
+            // ====================================
+
+            const hitBottomPipe =
+
+                birdRect.right >
+                bottomPipeRect.left &&
+
+                birdRect.left <
+                bottomPipeRect.right &&
+
+                birdRect.bottom >
+                bottomPipeRect.top &&
+
+                birdRect.top <
+                bottomPipeRect.bottom;
+
+
+            // ====================================
+            // GAME OVER
+            // ====================================
+
+            if (
+                hitTopPipe ||
+                hitBottomPipe
+            ) {
+
+                clearInterval(pipeMovement);
+
+                gameOver();
+
+                return;
+
+            }
+
+
+            // ====================================
+            // REMOVE PIPE
+            // ====================================
+
+            if (pipeLeft < -100) {
+
+                pipeTop.remove();
+
+                pipeBottom.remove();
+
+                clearInterval(pipeMovement);
+
+            }
+
+        }, 20);
+
+
+    // Save interval
+    pipeMovementIntervals.push(
+        pipeMovement
+    );
 }
 
 
-// ===============================
-// CREATE NEW PIPE EVERY 2 SECONDS
-// ===============================
+// ========================================
+// CREATE PIPES
+// ========================================
 
-setInterval(createPipe, 2000);
+pipeCreationInterval =
+    setInterval(
+        createPipe,
+        PIPE_INTERVAL
+    );
 
 
-// ===============================
+// ========================================
 // GAME OVER
-// ===============================
+// ========================================
 
 function gameOver() {
 
-  if (isGameOver) return;
+    // Prevent multiple calls
+    if (isGameOver) {
+        return;
+    }
 
-  isGameOver = true;
 
-  alert("Your game is over!");
+    // Set game over
+    isGameOver = true;
 
-  location.reload();
+
+    // ====================================
+    // STOP BIRD
+    // ====================================
+
+    if (gravityInterval) {
+
+        clearInterval(
+            gravityInterval
+        );
+
+    }
+
+
+    // ====================================
+    // STOP NEW PIPES
+    // ====================================
+
+    if (pipeCreationInterval) {
+
+        clearInterval(
+            pipeCreationInterval
+        );
+
+    }
+
+
+    // ====================================
+    // STOP EXISTING PIPES
+    // ====================================
+
+    pipeMovementIntervals.forEach(
+        (interval) => {
+
+            clearInterval(interval);
+
+        }
+    );
+
+
+    pipeMovementIntervals = [];
+
+
+    // ====================================
+    // STOP CSS ANIMATIONS
+    // ====================================
+
+    game.classList.add("game-over");
+
+
+    // ====================================
+    // SHOW GAME OVER
+    // ====================================
+
+    setTimeout(() => {
+
+        alert("Your game is over!");
+
+        location.reload();
+
+    }, 100);
+
 }
